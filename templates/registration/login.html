@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <div class="row">
+    <div class="container center-block" style="padding-left: 20px;">
+        <form method="POST">
+            <h2 >MTG-Vision | Sign In</h2>
+            <hr/>
+            {% csrf_token %}
+            {{ form|crispy }}
+            <hr/>
+            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "signup" %}';">Signup</button>
+        </form>
+            <hr/>
+            <button type="button" class="btn" onclick="window.location.href='{% url "password_reset_recover" %}';">Reset Password</button>
+    </div>
+    </div>
+{% endblock %}
