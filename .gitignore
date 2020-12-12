@@ -6,6 +6,11 @@ __pycache__
 db.sqlite3
 media
 
+conf/
+*/settings.py
+*/settings.py.save
+supervisord.conf
+
 # Backup files #
 *.bak
 
