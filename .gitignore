@@ -5,6 +5,7 @@
 __pycache__
 db.sqlite3
 media
+mtg_vision_project/settings.py
 
 # Backup files #
 *.bak
