@@ -7,6 +7,11 @@ db.sqlite3
 media
 mtg_vision_project/settings.py
 
+conf/
+*/settings.py
+*/settings.py.save
+supervisord.conf
+
 # Backup files #
 *.bak
 
