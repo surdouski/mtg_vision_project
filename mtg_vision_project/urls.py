@@ -19,7 +19,7 @@ from django.urls import path, include
 from django.contrib.auth.views import LoginView, LogoutView
 from django.views.generic import TemplateView
 
-from mtg_vision_project import views
+from mtg_vision_project import views, serializers
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -29,4 +29,7 @@ urlpatterns = [
     path('home/', views.home, name='home'),
     path('info/', views.info, name='info'),
     path('admin/', admin.site.urls),
+    path('drag_n_drop', TemplateView.as_view(template_name='drag_and_drop.html'),
+         name='drag_n_drop'),
+    path('drag_n_drop/upload', serializers.upload_api_view, name='upload_image'),
 ]

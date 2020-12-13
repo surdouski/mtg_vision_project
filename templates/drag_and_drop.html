@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<style>
+.drag-drop{
+    width: 100%;
+    height: 100px;
+    background-color: #1caff6;
+    margin-top: 30px;
+    border-radius: 10px;
+    border: dashed 2px white;
+    color: white;
+    text-align: center;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    font-size: 14pt;
+    transition: .5s background-color, .5s color;
+    font-family:inherit;
+}
+
+.drag-drop.dragover{
+    background-color: #0e384c;
+    color: white;
+}
+
+.drag-drop.uploading{
+    background-color: #0e384c;
+    color: white;
+}
+
+img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div id="edit_photo" class="edit-photo-modal">
+    <form id="drag_files" class="drag-drop" method="post" action="{% url 'upload_image' %}" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <input type="file" name="image_input" id="files" multiple />
+        <div class="drag-files-label">
+            Drag your MTG cards photos here!
+        </div>
+    </form>
+</div>
+
+<div class="row" id="output_images_target"></div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+var droppedFiles;
+var isAdvancedUpload = true;
+
+function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+}
+
+function add_image_to_div(image_url, image_name) {
+    let new_div = document.createElement("div");
+    new_div.className = "col-sm-3 container";
+
+    let new_img = document.createElement("img");
+    new_img.src = "{% static '' %}" + image_url;
+    new_img.title = image_name;
+    new_img.id = image_name + '-id';
+
+    let new_img_label = document.createElement("label");
+    new_img_label.textContent = image_name;
+    new_img_label.for = image_name+'-id';
+
+    document.getElementById('output_images_target').appendChild(new_div);
+    new_div.appendChild(new_img_label).appendChild(new_img);
+
+}
+
+(function (document, window, index) {
+         // auto upload image on file upload
+
+         // feature detection for drag&drop upload
+
+         const csrftoken = getCookie('csrftoken');
+
+         isAdvancedUpload = function () {
+            var div = document.createElement('div');
+            return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
+         }();
+
+         if (isAdvancedUpload)
+         {
+             var form = document.getElementById("drag_files");
+             var input = form.querySelector('input[type="file"]');
+
+             // needed for ajax upload
+             var ajaxFlag = document.createElement('input');
+             ajaxFlag.setAttribute('type', 'hidden');
+             ajaxFlag.setAttribute('name', 'ajax');
+             ajaxFlag.setAttribute('value', 1);
+             form.appendChild(ajaxFlag);
+
+             ['drag', 'dragstart', 'dragend', 'dragover', 'dragenter', 'dragleave', 'drop'].forEach(function (event) {
+                 form.addEventListener(event, function (e) {
+                     // preventing the unwanted behaviours
+                     e.preventDefault();
+                     e.stopPropagation();
+                 });
+             });
+
+             ['dragover', 'dragenter'].forEach(function (event) {
+                 form.addEventListener(event, function () {
+                     form.classList.add('dragover');
+                 });
+             });
+
+             ['dragleave', 'dragend', 'drop'].forEach(function (event) {
+                 form.addEventListener(event, function () {
+                     form.classList.remove('dragover');
+                 });
+             });
+
+             form.addEventListener('drop', function (e) {
+                 droppedFiles = e.dataTransfer.files; // the files that were dropped
+
+                 if (droppedFiles.length > 0)
+                 {
+                     form.querySelector(".drag-files-label").innerHTML = droppedFiles[0].name;
+                     var event = document.createEvent('HTMLEvents');
+                     event.initEvent('submit', true, false);
+                     form.dispatchEvent(event);
+                 }
+             });
+
+             form.addEventListener('submit', function (e) {
+                 if (form.classList.contains('uploading'))
+                     return false;
+
+                 form.classList.add('uploading');
+                 //form.classList.remove('is-error');
+
+                 if (isAdvancedUpload) // ajax file upload for modern browsers
+                 {
+                     e.preventDefault();
+
+                     // gathering the form data
+                     var ajaxData = new FormData(form);
+                     if (droppedFiles) {
+                         console.log(droppedFiles[0]);
+                         ajaxData.append('image_input', droppedFiles[0]);
+                     }
+
+                     // ajax request
+                     var ajax = new XMLHttpRequest();
+                     ajax.open(form.getAttribute('method'), form.getAttribute('action'), true);
+
+                     ajax.onload = function () {
+                         console.log('ajax onload');
+                         form.classList.remove('uploading');
+                         if (ajax.status >= 200 && ajax.status < 400) {
+                            console.log(ajax.response);
+
+
+                            let response_data = JSON.parse(ajax.response);
+                            let response_image_urls = response_data.data;
+                            console.log(response_image_urls);
+
+                            Array.prototype.forEach.call(response_image_urls, function(_image) {
+                               add_image_to_div(_image.image_input, _image.image_name);
+                            });
+                         }
+                         else {
+                             console.log('whoops');
+                             alert('Error. Please, contact the webmaster!');
+                         }
+                     };
+
+                     ajax.send(ajaxData);
+                 }
+             });
+         }
+    }(document, window, 0));
+</script>
+{% endblock %}
