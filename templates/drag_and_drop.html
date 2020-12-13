@@ -91,6 +91,15 @@ function add_image_to_div(image_url, image_name) {
 
 }
 
+function replace_file_uploader_with_button() {
+    document.getElementById('edit_photo').innerHTML = '' +
+        '<div class="row">' +
+        '<div class="col-sm-1">' +
+        '<button type="button" class="btn btn-success" onclick="window.location.reload();">Choose a new image</button>' +
+        '</div>' +
+        '</div>';
+}
+
 (function (document, window, index) {
          // auto upload image on file upload
 
@@ -183,6 +192,7 @@ function add_image_to_div(image_url, image_name) {
                             Array.prototype.forEach.call(response_image_urls, function(_image) {
                                add_image_to_div(_image.image_input, _image.image_name);
                             });
+                            replace_file_uploader_with_button();
                          }
                          else {
                              console.log('whoops');
