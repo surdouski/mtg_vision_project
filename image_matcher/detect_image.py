@@ -14,7 +14,7 @@ def find_cards(image, hash_pool):
     detected_cards = []
     for n, contour in enumerate(contours):
         rectangle_points = _get_rectangle_points_from_contour(contour)
-        card_image = _four_point_transform(image, rectangle_points)
+        card_image = _four_point_transform(np.array(image), rectangle_points)
         card = find_minimum_hash_difference(card_image, hash_pool)
         """draw_text_and_contours_image(card['name'], contour,
                                      input_image, rectangle_points)"""
@@ -124,7 +124,7 @@ def rotate_image(max_height, max_width, transformed_image):
 
 def find_contours(image, ksize=5, thresh_max_value=255, thresh_block_size=199, thresh_c=5,
                   kernel_size=(3, 3)):
-    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image_gray = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
     image_blur = cv2.medianBlur(image_gray, ksize)
     image_thresh = cv2.adaptiveThreshold(image_blur, thresh_max_value,
                                        cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV,

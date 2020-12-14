@@ -33,6 +33,6 @@ def draw_text_and_save_card_image(card_name, card_image, n):
     """
     image_path = f'{card_name}_{n}.jpg'
     full_path = f'{STATICFILES_DIRS[0]}/{image_path}'
-    cv2.imwrite(full_path, card_image)
-    print(image_path)
+    rgb_img = cv2.cvtColor(card_image, cv2.COLOR_BGR2RGB)
+    cv2.imwrite(full_path, rgb_img)
     return image_path
