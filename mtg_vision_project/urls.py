@@ -26,7 +26,7 @@ urlpatterns = [
     path('', include('password_reset.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/signup/', views.signup, name='signup'),
-    path('home/', views.home, name='home'),
+    path('home/', views.info, name='home'),
     path('info/', views.info, name='info'),
     path('admin/', admin.site.urls),
     path('drag_n_drop', TemplateView.as_view(template_name='drag_and_drop.html'),
