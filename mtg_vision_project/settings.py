@@ -10,26 +10,36 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
-from pathlib import Path
 import os
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'fvc0o$us$wlru7o3baoq2++g+r@0g*^3#o2tkn3q*1=z3(_=mu'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+#import os.path
+import environ
+#from configurations import Configuration
 
 
-# Application definition
+env = environ.Env(
+    DEBUG=bool,
+    ALLOWED_HOSTS=[str],
+    MEDIA_ROOT=str,
+    CSRF_COOKIE_SECURE=bool,
+    SESSION_COOKIE_SECURE=bool,
+    PICKLED_CARDS_PATH=str,
+    STATIC_ROOT=str,
+    STATIC_URL=str,
+    STATICFILES_DIRS=str,
+)
+environ.Env.read_env()
+
+BASE_DIR = environ.Path(__file__) - 2
+
+"""class Dev(Configuration):
+    DOTENV = os.path.join(BASE_DIR, '.env')
+    SECRET_KEY = DOTENV.environ('SECRET_KEY')"""
+
+SECRET_KEY = env.bytes('SECRET_KEY')
+
+DEBUG = env("DEBUG")
+
+ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 INSTALLED_APPS = [
     'bootstrap4',
@@ -42,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'image_matcher.apps.ImageMatcherConfig',
     'password_reset',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +69,8 @@ ROOT_URLCONF = 'mtg_vision_project.urls'
 
 LOGIN_REDIRECT_URL = '/home/'
 LOGOUT_REDIRECT_URL = '/home/'
+
+MEDIA_ROOT = env('MEDIA_ROOT')
 
 TEMPLATES = [
     {
@@ -81,18 +94,16 @@ WSGI_APPLICATION = 'mtg_vision_project.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': 'db.sqlite3',
     }
 }
 
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -111,19 +122,25 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
+
+
+# COOKIES
+CSRF_COOKIE_SECURE = env('CSRF_COOKIE_SECURE')
+SESSION_COOKIE_SECURE = env('SESSION_COOKIE_SECURE')
+CONN_MAX_AGE = env('CONN_MAX_AGE')
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
-
-STATIC_URL = '/static/'
+STATIC_ROOT = env('STATIC_ROOT')
+STATIC_URL = env('STATIC_URL')
+STATICFILES_DIRS = (
+    env('STATICFILES_DIRS'),
+)
+PICKLED_CARDS_PATH = env('PICKLED_CARDS_PATH')
+TEMP_FILES_DIR = env('TEMP_FILES_DIR')

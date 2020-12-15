@@ -5,15 +5,13 @@
 __pycache__
 db.sqlite3
 media
-mtg_vision_project/settings.py
 
 static/all_sets_small.csv
 conf/
-*/settings.py
-*/settings.py.save
 supervisord.conf
 
 image_matcher/migrations/*
+static/*
 
 # Backup files #
 *.bak

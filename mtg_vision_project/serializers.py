@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from image_matcher.detect_image import find_cards
 from image_matcher.models import ImageUpload
 
-from .settings import MEDIA_ROOT, CARD_POOLS_ALL_SETS_PCK
+from .settings import MEDIA_ROOT, PICKLED_CARDS_PATH
 
 
 class UploadImageSerializer(serializers.ModelSerializer):
@@ -40,7 +40,7 @@ def upload_api_view(request):
             #image = Image.open(serializer.validated_data['image_input'])
             image = cv2.imread(f'{MEDIA_ROOT}{image_upload_object.image_input}')
             del image_upload_object
-            hash_pool = pd.read_pickle(CARD_POOLS_ALL_SETS_PCK)
+            hash_pool = pd.read_pickle(PICKLED_CARDS_PATH)
             hash_pool = flatten_hash_array(hash_pool)
             detected_cards = find_cards(image, hash_pool)
             del hash_pool
