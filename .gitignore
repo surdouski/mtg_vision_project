@@ -13,6 +13,14 @@ supervisord.conf
 image_matcher/migrations/*
 static/*
 
+
+mtg_vision_project/ebay_oauth_python_client/CONTRIBUTING.adoc
+mtg_vision_project/ebay_oauth_python_client/eBay_Oauth_log.txt
+mtg_vision_project/ebay_oauth_python_client/LICENSE.txt
+mtg_vision_project/ebay_oauth_python_client/README.adoc
+mtg_vision_project/ebay_oauth_python_client/requirements.txt
+
+
 # Backup files #
 *.bak
 

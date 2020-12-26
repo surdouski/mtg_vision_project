@@ -32,4 +32,6 @@ urlpatterns = [
     path('drag_n_drop', TemplateView.as_view(template_name='drag_and_drop.html'),
          name='drag_n_drop'),
     path('drag_n_drop/upload', serializers.upload_api_view, name='upload_image'),
+    path('ebay_auth_code/', views.ebay_auth_code, name='ebay_auth_code'),
+    path('ebay_sign_in/', views.ebay_sign_in, name='ebay_sign_in'),
 ]
