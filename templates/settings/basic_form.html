@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load permissions_tags %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <div class="container col-sm-3">
+        {% if request.user|has_ebay_tokens %}
+            {% if title %}
+                <h4>{{ title }}</h4>
+            {% endif %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+
+            {% crispy form %}
+        {% else %}
+            <p>Must link account to ebay before any settings can be modified.</p>
+            <a href="{% url 'ebay_sign_in' %}">Link Account to eBay</a>
+        {% endif %}
+    </div>
+{% endblock %}

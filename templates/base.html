@@ -24,6 +24,9 @@
         {% if user.is_authenticated %}
             <li><a href="{% url 'drag_n_drop' %}">Test Image Cropping</a></li>
         {% endif %}
+        {% if request.user|has_ebay_tokens %}
+            <li><a href="{% url 'new_listing' %}">Begin Listing</a></li>
+        {% endif %}
         {% if not request.user|has_ebay_tokens %}
             <li><a href="{% url 'ebay_sign_in' %}">Link Account to eBay</a></li>
         {% endif %}
@@ -35,8 +38,8 @@
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                 <ul>
-                    <li><a class="dropdown-item" href="#">Account</a></li>
-                    <li><a class="dropdown-item" href="#">eBay Settings</a></li>
+                    <li><a class="dropdown-item" href="{% url 'sell_settings' %}">Sell Settings</a></li>
+                    <li><a class="dropdown-item" href="{% url 'ebay_settings' %}">eBay Settings</a></li>
                 </ul>
             </div>
         </li>

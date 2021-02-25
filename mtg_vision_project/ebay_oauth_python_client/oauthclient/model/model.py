@@ -30,10 +30,10 @@ class environment(object):
 
 class credentials(object):
     def __init__(self, client_id, client_secret, dev_id, ru_name):
-        self.client_id = client_id 
-        self.dev_id = dev_id
-        self.client_secret = client_secret
-        self.ru_name = ru_name
+        self.client_id = client_id  #appid
+        self.dev_id = dev_id  # devid
+        self.client_secret = client_secret  # certid
+        self.ru_name = ru_name  #redirect_uri
     
 
 class oAuth_token(object):

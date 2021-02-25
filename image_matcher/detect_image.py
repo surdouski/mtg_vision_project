@@ -6,11 +6,13 @@ from image_matcher.draw_image import (
 )
 from image_matcher.ebay_listing import CardListingObject
 from image_matcher.hash_matcher import find_minimum_hash_difference
+from image_matcher.models import ImageUpload
 
 
 def find_cards(image, hash_pool):
     contours = find_contours(image.copy())
-    detected_cards = []
+    #detected_cards = []
+    card_models = []
     for n, contour in enumerate(contours):
         rectangle_points = _get_rectangle_points_from_contour(contour)
         card_image = _four_point_transform(image,
@@ -20,8 +22,11 @@ def find_cards(image, hash_pool):
                                      input_image, rectangle_points)"""
         card_image_path = draw_text_and_save_card_image(card['name'], card_image, n)
         del card_image
-        detected_cards.append(CardListingObject(card_image_path, card))
-    return detected_cards
+        card_models.append(ImageUpload.objects.create(image_input=card_image_path,
+                                   image_name=card['name']))
+        #detected_cards.append(CardListingObject(card_image_path, card))
+    #return detected_cards
+    return card_models
 
 
 def _get_rectangle_points_from_contour(contour):

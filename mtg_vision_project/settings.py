@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 #import os.path
 import environ
-#from configurations import Configuration
 
 
 env = environ.Env(
@@ -128,6 +127,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 # COOKIES
 CSRF_COOKIE_SECURE = env('CSRF_COOKIE_SECURE')

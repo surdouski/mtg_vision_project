@@ -24,11 +24,20 @@ from . import model
 from .model import util
 from datetime import datetime, timedelta
 from .credentialutil import credentialutil
-from .model.model import oAuth_token
-
+from .model.model import oAuth_token, credentials
+from image_matcher.models import AppCredential
 
 LOGFILE = 'eBay_Oauth_log.txt'
 logging.basicConfig(level=logging.DEBUG, filename=LOGFILE, format="%(asctime)s: %(levelname)s - %(funcName)s: %(message)s", filemode='w')
+
+
+app_scopes = [
+    "https://api.ebay.com/oauth/api_scope",
+    "https://api.ebay.com/oauth/api_scope/sell.inventory",
+    "https://api.ebay.com/oauth/api_scope/sell.marketing",
+    "https://api.ebay.com/oauth/api_scope/sell.account",
+    "https://api.ebay.com/oauth/api_scope/sell.fulfillment"
+]
 
 
 def get_instance_oauth2api(app_config_path):
@@ -38,31 +47,23 @@ def get_instance_oauth2api(app_config_path):
 
 
 class oauth2api(object):
-    
-           
-    def generate_user_authorization_url(self, env_type, scopes, state=None):
-        '''
-            env_type = environment.SANDBOX or environment.PRODUCTION
-            scopes = list of strings
-        '''
 
-        credential = credentialutil.get_credentials(env_type)   
-    
+    @staticmethod
+    def generate_user_authorization_url(scopes, state=None):
+        credential = AppCredential.objects.get_app_credential()
         scopes = ' '.join(scopes)
         param = {
-                'client_id':credential.client_id,
-                'redirect_uri':credential.ru_name,
-                'response_type':'code',
-                'prompt':'login',
-                'scope':scopes
-                }
+            'client_id': credential.app_id,
+            'redirect_uri': credential.redirect_uri,
+            'response_type': 'code',
+            'prompt': 'login',
+            'scope': scopes,
+        }
         
-        if state != None:
-            param.update({'state':state})
-
+        if state is not None:
+            param.update({'state': state})
         query = urllib.parse.urlencode(param)
-        return env_type.web_endpoint + '?' + query
-    
+        return f'{credential.web_endpoint}?{query}'
 
     def get_application_token(self, env_type, scopes):
         """
@@ -123,9 +124,9 @@ class oauth2api(object):
         refresh token call
         """
         
-        logging.info("Trying to get a new user access token ... ")  
+        logging.info("Trying to get a new user access token ... ")
 
-        credential = credentialutil.get_credentials(env_type)   
+        credential = credentialutil.get_credentials(env_type)
     
         headers = util._generate_request_headers(credential)
         body = util._generate_refresh_request_body(' '.join(scopes), refresh_token)
@@ -142,3 +143,56 @@ class oauth2api(object):
             logging.error("Unable to retrieve token.  Status code: %s - %s", resp.status_code, requests.status_codes._codes[resp.status_code])
             logging.error("Error: %s - %s", content['error'], content['error_description'])
         return token
+
+
+class RefreshAccessTokenCredentials:
+    def __init__(self, app_id, cert_id, dev_id, redirect_uri, api_endpoint,
+                 refresh_token):
+        self.app_id = app_id
+        self.cert_id = cert_id
+        self.dev_id = dev_id
+        self.redirect_uri = redirect_uri
+        self.api_endpoint = api_endpoint
+        self.refresh_token = refresh_token
+
+
+def get_access_token(refresh_access_token_credentials):
+    logging.info("Trying to get a new user access token ... ")
+
+    credential = credentials(refresh_access_token_credentials.app_id,
+                             refresh_access_token_credentials.dev_id,
+                             refresh_access_token_credentials.cert_id,
+                             refresh_access_token_credentials.redirect_uri)
+
+    print(refresh_access_token_credentials.app_id)
+    print(refresh_access_token_credentials.dev_id)
+    print(refresh_access_token_credentials.cert_id)
+    print(refresh_access_token_credentials.redirect_uri)
+    print(refresh_access_token_credentials.api_endpoint)
+    print(refresh_access_token_credentials.refresh_token)
+    headers = util._generate_request_headers(credential)
+    body = util._generate_refresh_request_body(' '.join(app_scopes),
+                                               refresh_access_token_credentials.refresh_token)
+    print(headers)
+    print(body)
+    print(refresh_access_token_credentials.api_endpoint)
+    resp = requests.post(refresh_access_token_credentials.api_endpoint, data=body,
+                         headers=headers)
+    print(resp)
+    content = json.loads(resp.content)
+    print(content)
+    token = oAuth_token()
+    token.token_response = content
+
+    if resp.status_code == requests.codes.ok:
+        token.access_token = content['access_token']
+        token.token_expiry = datetime.utcnow() + timedelta(
+            seconds=int(content['expires_in'])) - timedelta(minutes=5)
+    else:
+        token.error = str(resp.status_code) + ': ' + content['error_description']
+        logging.error("Unable to retrieve token.  Status code: %s - %s",
+                      resp.status_code,
+                      requests.status_codes._codes[resp.status_code])
+        logging.error("Error: %s - %s", content['error'],
+                      content['error_description'])
+    return token

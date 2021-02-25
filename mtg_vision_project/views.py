@@ -8,8 +8,11 @@ from django.shortcuts import render
 from django.urls import reverse
 from requests import HTTPError
 
+from image_matcher.forms import get_ebay_settings_form, get_sell_settings_form
+from image_matcher.models.profile import WebUser
 from .forms import SignUpForm
-from .ebay_oauth_python_client.oauthclient.oauth2api import get_instance_oauth2api
+from .ebay_oauth_python_client.oauthclient.oauth2api import \
+    oauth2api, get_instance_oauth2api
 from .ebay_oauth_python_client.oauthclient.model.model import environment
 
 
@@ -58,12 +61,8 @@ app_scopes = ["https://api.ebay.com/oauth/api_scope",
 
 @login_required()
 def ebay_sign_in(request):
-    app_config_path = os.path.join(os.path.split(__file__)[0], 'config',
-                                   'ebay-config-sample.yaml')
-    oauth2api_inst = get_instance_oauth2api(app_config_path)
     try:
-        sign_in_url = oauth2api_inst.generate_user_authorization_url(environment.SANDBOX,
-                                                                app_scopes)
+        sign_in_url = oauth2api.generate_user_authorization_url(app_scopes)
         return HttpResponseRedirect(sign_in_url)
     except HTTPError:
         messages.add_message(request, messages.ERROR, 'Unable to get authorization '
@@ -74,7 +73,7 @@ def ebay_sign_in(request):
 @login_required()
 def ebay_auth_code(request):
     if 'code' not in request.GET:
-        return HttpResponseRedirect(reverse('ebay_sign_in'))
+        return HttpResponseRedirect(reverse('ebay_sign_in '))
 
     code = request.GET.get('code')
     app_config_path = os.path.join(os.path.split(__file__)[0], 'config',
@@ -83,9 +82,9 @@ def ebay_auth_code(request):
     try:
         user_token = oauth2api_inst.exchange_code_for_access_token(environment.SANDBOX,
                                                                    code)
-        user = request.user
-        user.user_tokens_profile.access_token = user_token.access_token
-        user.user_tokens_profile.refresh_token = user_token.refresh_token
+        user = WebUser.get_user(request.user)
+        user.access_token = user_token.access_token
+        user.refresh_token = user_token.refresh_token
         user.save()
     except HTTPError:
         messages.add_message(request, messages.ERROR, 'Unable to create ebay link.')
@@ -93,12 +92,57 @@ def ebay_auth_code(request):
     return HttpResponseRedirect(reverse('home'))
 
 
-# TODO: Do refresh token action for access token view (given invalid/expired access
-#  token), then create views for actually posting to ebay. Probably first ensure that
-#  setting up works on actual site automatically without any need to change URLs.
-
-
 @login_required()
 def home(request):
     template = 'home.html'
     return render(request, template)
+
+
+@login_required()
+def ebay_settings_view(request):
+    template = 'settings/basic_form.html'
+    title = 'eBay Settings'
+
+    if request.method == 'GET':
+        form = get_ebay_settings_form(request.user)
+        context = {
+            'form': form,
+            'title': title
+        }
+        return render(request, template, context)
+
+    if request.method == 'POST':
+        form = get_ebay_settings_form(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.add_message(request, messages.INFO, 'eBay Settings Updated!')
+        context = {
+            'form': form,
+            'title': title
+        }
+        return render(request, template, context)
+
+
+@login_required()
+def sell_settings_view(request):
+    template = 'settings/basic_form.html'
+    title = 'Sell Settings'
+
+    if request.method == 'GET':
+        form = get_sell_settings_form(request.user)
+        context = {
+            'form': form,
+            'title': title
+        }
+        return render(request, template, context)
+
+    if request.method == 'POST':
+        form = get_sell_settings_form(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.add_message(request, messages.INFO, 'Sell Settings Updated!')
+        context = {
+            'form': form,
+            'title': title
+        }
+        return render(request, template, context)

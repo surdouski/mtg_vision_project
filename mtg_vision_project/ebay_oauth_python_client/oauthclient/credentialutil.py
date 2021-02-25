@@ -19,6 +19,7 @@ import yaml
 import json
 import logging
 from .model.model import environment, credentials
+from image_matcher.models import AppCredential
 
 user_config_ids = ["sandbox-user", "production-user"]
 
@@ -62,11 +63,12 @@ class credentialutil(object):
         """
         env_config_id: environment.PRODUCTION.config_id or environment.SANDBOX.config_id
         """    
-        if len(cls._credential_list) == 0:
+        '''if len(cls._credential_list) == 0:
             msg = "No environment loaded from configuration file"
             logging.error(msg)
             raise CredentialNotLoadedError(msg)
-        return cls._credential_list[env_type.config_id]
+        return cls._credential_list[env_type.config_id]'''
+        return AppCredential.objects.get_app_credential()
     
 class CredentialNotLoadedError(Exception):
     pass

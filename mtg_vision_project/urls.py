@@ -13,13 +13,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.conf.urls import url
 from django.contrib import admin
 from django.urls import path, include
-from django.contrib.auth.views import LoginView, LogoutView
 from django.views.generic import TemplateView
 
 from mtg_vision_project import views, serializers
+from image_matcher.views import new_listing
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -32,6 +31,12 @@ urlpatterns = [
     path('drag_n_drop', TemplateView.as_view(template_name='drag_and_drop.html'),
          name='drag_n_drop'),
     path('drag_n_drop/upload', serializers.upload_api_view, name='upload_image'),
+
+    path('new_listing/', new_listing, name='new_listing'),
+
+    path('ebay_settings/', views.ebay_settings_view, name='ebay_settings'),
+    path('sell_settings/', views.sell_settings_view, name='sell_settings'),
+
     path('ebay_auth_code/', views.ebay_auth_code, name='ebay_auth_code'),
     path('ebay_sign_in/', views.ebay_sign_in, name='ebay_sign_in'),
 ]
