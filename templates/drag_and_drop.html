@@ -5,7 +5,7 @@
     {% comment %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/image-picker/0.3.1/image-picker.css" integrity="sha512-SMXf5+HiyBHQjtjM3hqAZi0+H8KLyeOEA+gPBKqfOkgbuGTIsb0/sgT7jWQRsBt20TvnoUqM3cDbrIhv6gIiSg==" crossorigin="anonymous" />
 {% endcomment %}
-    <link rel="stylesheet" src="{% static 'image-picker/image-picker.jss' %}"/>
+    <link rel="stylesheet" href="{% static 'image-picker/image-picker.css' %}">
 <style>
 body, html {
     height: 95%;
@@ -43,12 +43,25 @@ body, html {
     background-color: #86b1ba;
     color: white;
 }
+img {
+    width: auto;
+    height: auto;
+}
+.thumbnail>img {
+    display: inline;
+    max-width: 200px;
+}
 
+.modal-lg {
+    width: fit-content;
+}
+/**
 img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
+**/
 </style>
 {% endblock %}
 
@@ -63,31 +76,37 @@ img {
             </div>
         </form>
     </div>
-<div class="row" id="output_images_target"></div>
     <!-- Modal -->
 
-    <div class="modal fade" id="card_selector_modal" role="dialog" hidden="hidden">
-        <div class="modal-dialog">
+            <div class="modal fade" id="card_selector_modal" role="dialog">
+                <div class="modal-dialog modal-lg">
 
-            <!-- Modal content-->
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select correctly labeled cards.</h4>
-                </div>
-                <div class="modal-body">
-                    <select multiple="multiple" class="image-picker show-labels" id="modal-card-select"></select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <!-- Modal content-->
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Select correctly labeled cards.</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form action="/" method="post">
+                                <select multiple="multiple" class="image-picker show-labels" id="modal-card-select">
+                                </select>
+                                <input type="button" name="submit_form" id="submit_form_id" value="Submit" onclick="submitSelections()" >
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+
 {% endblock %}
 
 {% block javascript %}
     <script src="{% static 'image-picker/image-picker.js' %}"></script>
+    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.js"></script>
+
 {% comment %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/image-picker/0.3.1/image-picker.min.js" integrity="sha512-76tAVeQq8wkwtFWzKPU03XJGMF/mcLDeBgi9wIlRICXdkLNUYVBiOL3O/R9Bold+u0eN0OUftCcBTjFkchPyBg==" crossorigin="anonymous"></script>
     {% endcomment %}
@@ -113,19 +132,59 @@ function getCookie(name) {
 }
 
 
-function card_selector_modal(card_selector_results) {
-    let modal_card_select = $('#modal-card-select');
-    card_selector_results.forEach(function(element) {
-        let option = document.createElement('option');
-        var image = new Image();
-        image.src = "{% static '' %}" + element[0];
-        option.data = image;
-        option.value = element[1];
-        option.text = element[1];
-        $('#modal-card-select').add(option);
+function submitSelections() {
+    const csrf_token = getCookie('csrftoken');
+    selected_thumbnails = $('.thumbnail.selected');
+    selected_photo_urls = [];
+    selected_thumbnails.each(function(index, element) {
+        selected_photo_urls.push(element.children[0].src);
     });
-    modal_card_select.imagepicker();
-    //$('#modal-card-select').imagepicker();
+    console.log(selected_photo_urls);
+    return;
+    url = "/";
+    const request = new Request(
+      url,
+      {
+        method: 'POST',
+        body: {selected_ids: 'selected_ids'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token... haha yeah right mr public codepen'
+        },
+    });
+    fetch(request)
+      .then(response => {
+        console.log(response.json());
+      })
+      .catch(error => {
+        console.error(error);
+      });
+}
+
+
+function card_selector_modal(card_selector_results) {
+    //let modal_card_select = $('#modal-card-select');
+    card_selector_results.forEach(function(element) {
+        console.log("{% static '' %}" + element[0]);
+        let option = document.createElement('option');
+        option.setAttribute('data-img-src', "{% static '' %}" + element[0]);
+        option.setAttribute('value', element[1]);
+        option.setAttribute('data-img-label', "<p class='center' style='text-align:center;-webkit-text-stroke-width:thin;'>" + element[1] + "</p>");
+        option.text = element[1];
+        document.getElementById('modal-card-select').appendChild(option);
+    });
+    //modal_card_select.imagepicker();
+    /**$('.image_picker_selector').masonry({
+        itemSelector:'.image_picker_image',
+        columnWidth: 200
+    });**/
+    $('.image_picker_selector').masonry({
+        itemSelector: '.thumbnail',
+        columnWidth: 200
+    });
+    $('#modal-card-select').imagepicker({
+        show_label: true,
+    });
     $("#card_selector_modal").modal();
 }
 
