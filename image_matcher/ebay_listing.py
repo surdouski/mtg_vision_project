@@ -1,29 +1,25 @@
 import environ
 
-from decimal import Decimal
-
 from ebaysdk.trading import Connection as Trading
-from ebaysdk.exception import ConnectionError
 
+from image_matcher.models import AppCredential
 from image_matcher.models.profile import WebUser
 from mtg_vision_project.ebay_oauth_python_client.oauthclient.oauth2api import \
     (
-    get_access_token, RefreshAccessTokenCredentials,
-)
-from mtg_vision_project.ebay_oauth_python_client.oauthclient.model.model import environment
-
-#from .fetch_data import fetch_card_price
-
+        get_access_token, RefreshAccessTokenCredentials,
+    )
+from mtg_vision_project.settings import STATICFILES_DIRS
 
 env = environ.Env(DOMAIN=str)
 environ.Env.read_env()
 
 
 class CardListingObject:
-    def __init__(self, card_details, ebay_image_url):
-        self._card_details = card_details
-        self._ebay_image_url = ebay_image_url
-        self._user = None
+    def __init__(self, image_instance, user):
+        self._image_instance = image_instance
+        self._listing_details = image_instance.listing_details
+        self._user = user
+        self._ebay_image_url = None
 
         self._api = self.activate_api()
 
@@ -36,24 +32,32 @@ class CardListingObject:
         self._user = value
 
     @property
+    def ebay_image_url(self):
+        return self._ebay_image_url
+
+    @ebay_image_url.setter
+    def ebay_image_url(self, value):
+        self._ebay_image_url = value
+
+    @property
     def card_id(self):
-        return self._card_details['id']
+        return self._listing_details.scryfall_id
 
     @property
     def card_name(self):
-        return self._card_details['name']
+        return self._listing_details.name
 
     @property
     def card_set(self):
-        return self._card_details['set']
-
-    @property
-    def ebay_image_url(self):
-        return self._ebay_image_url
+        return self._listing_details.set
 
     @property
     def title(self):
         return f"MTG [{self.card_set}]{self.card_name} x 1"
+
+    @property
+    def api(self):
+        return self._api
 
     def activate_api(self):
         """Required for ebay -> app id, dev id, cert id, and token in ebay.yaml:
@@ -64,17 +68,52 @@ class CardListingObject:
         app_id = env('APP_ID')
         cert_id = env('CERT_ID')
         dev_id = env('DEV_ID')
+        redirect_uri = env('REDIRECT_URI')
+        api_endpoint = env('API_ENDPOINT')
         web_user = WebUser.get_user(self.user)
+        print(f'app_id: {app_id}')
+        print(f'cert_id: {cert_id}')
+        print(f'dev_id: {dev_id}')
+        print(f'web_user: {web_user}')
+        print(f'redirect_uri: {redirect_uri}')
+        print(f'api_endpoint: {api_endpoint}')
+
         credentials = RefreshAccessTokenCredentials(app_id, cert_id, dev_id,
                                                     env('REDIRECT_URI'),
                                                     env('API_ENDPOINT'),
                                                     web_user.refresh_token)
-        token = get_access_token(credentials)
-        #web_user.access_token = token
-        #web_user.save()
-        return Trading(compatability=719, appid=app_id, certid=cert_id, devid=dev_id,
-                       token=token,
-                       config=None)
+
+        print(web_user.refresh_token)
+        token, credential = AppCredential.objects.get_app_credential().get_access_token(
+            web_user.refresh_token)
+        #get_access_token(web_user.refresh_token)
+        print('test')
+        print(token.access_token)
+        print('test')
+        web_user.access_token = token.access_token
+        web_user.save()
+        return Trading(compatability=719, appid=credentials.client_id,
+                       certid=credentials.client_secret, devid=credentials.dev_id,
+                       token=token.access_token, config=None, domain='api.sandbox.ebay.com')
+
+    def upload_image(self):
+        """Uploads to ebay server for use in listing."""
+
+        files = {'file': ('EbayImage', open(self._get_path_from_image_input(), 'rb'))}
+        picture_data = {
+            "WarningLevel": "Low",
+            "PictureName": self.title,
+        }
+        print(files, picture_data)
+        response = self._api.execute('UploadSiteHostedPictures', picture_data,
+                                     files=files)
+        print(response)
+        self._ebay_image_url = response.reply.get('SiteHostedPictureDetails').get(
+            'FullURL')
+        return self._ebay_image_url
+
+    def _get_path_from_image_input(self):
+        return STATICFILES_DIRS[0] + '/media/' + self._image_instance.image_input.name
 
         # TODO: Test the API above******
     """@property

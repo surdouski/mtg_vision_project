@@ -148,41 +148,30 @@ class oauth2api(object):
 class RefreshAccessTokenCredentials:
     def __init__(self, app_id, cert_id, dev_id, redirect_uri, api_endpoint,
                  refresh_token):
-        self.app_id = app_id
-        self.cert_id = cert_id
+        self.client_id = app_id
+        self.client_secret = cert_id
         self.dev_id = dev_id
-        self.redirect_uri = redirect_uri
+        self.ru_name = redirect_uri
         self.api_endpoint = api_endpoint
         self.refresh_token = refresh_token
 
 
-def get_access_token(refresh_access_token_credentials):
+def get_access_token(refresh_token):
     logging.info("Trying to get a new user access token ... ")
 
+    """
     credential = credentials(refresh_access_token_credentials.app_id,
                              refresh_access_token_credentials.dev_id,
                              refresh_access_token_credentials.cert_id,
                              refresh_access_token_credentials.redirect_uri)
-
-    print(refresh_access_token_credentials.app_id)
-    print(refresh_access_token_credentials.dev_id)
-    print(refresh_access_token_credentials.cert_id)
-    print(refresh_access_token_credentials.redirect_uri)
-    print(refresh_access_token_credentials.api_endpoint)
-    print(refresh_access_token_credentials.refresh_token)
+    """
+    credential = AppCredential.objects.get_app_credential()
     headers = util._generate_request_headers(credential)
-    body = util._generate_refresh_request_body(' '.join(app_scopes),
-                                               refresh_access_token_credentials.refresh_token)
-    print(headers)
-    print(body)
-    print(refresh_access_token_credentials.api_endpoint)
-    resp = requests.post(refresh_access_token_credentials.api_endpoint, data=body,
-                         headers=headers)
-    print(resp)
+    body = util._generate_refresh_request_body(' '.join(app_scopes), refresh_token)
+    resp = requests.post(credential.api_endpoint, data=body, headers=headers)
     content = json.loads(resp.content)
-    print(content)
     token = oAuth_token()
-    token.token_response = content
+    token.token_response = content['access_token']
 
     if resp.status_code == requests.codes.ok:
         token.access_token = content['access_token']
@@ -195,4 +184,4 @@ def get_access_token(refresh_access_token_credentials):
                       requests.status_codes._codes[resp.status_code])
         logging.error("Error: %s - %s", content['error'],
                       content['error_description'])
-    return token
+    return token, credential

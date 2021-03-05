@@ -20,9 +20,19 @@ class WebUser(get_user_model()):
     def access_token(self):
         return self.user_tokens_profile.access_token
 
+    @access_token.setter
+    def access_token(self, value):
+        self.user_tokens_profile.access_token = value
+        self.user_tokens_profile.save()
+
     @property
     def refresh_token(self):
         return self.user_tokens_profile.refresh_token
+
+    @refresh_token.setter
+    def refresh_token(self, value):
+        self.user_tokens_profile.refresh_token = value
+        self.user_tokens_profile.save()
 
     @staticmethod
     def get_user(user):

@@ -1,4 +1,8 @@
+import logging
 import os
+
+import cv2
+import pandas as pd
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -7,13 +11,23 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from requests import HTTPError
+from rest_framework.decorators import api_view
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
 
+from image_matcher.detect_image import find_cards
+from image_matcher.ebay_listing import CardListingObject
 from image_matcher.forms import get_ebay_settings_form, get_sell_settings_form
+from image_matcher.models import ImageUpload
+from image_matcher.models.image_upload import upload_image, CardListingDetails
 from image_matcher.models.profile import WebUser
 from .forms import SignUpForm
 from .ebay_oauth_python_client.oauthclient.oauth2api import \
     oauth2api, get_instance_oauth2api
 from .ebay_oauth_python_client.oauthclient.model.model import environment
+from .serializers import UploadImageSerializer, OutPutSerializer
+from image_matcher.hash_matcher import flatten_hash_array
+from .settings import MEDIA_ROOT, PICKLED_CARDS_PATH, STATIC_URL, STATIC_ROOT, MEDIA_URL
 
 
 def index(request):
@@ -146,3 +160,57 @@ def sell_settings_view(request):
             'title': title
         }
         return render(request, template, context)
+
+
+@login_required()
+@api_view(['POST'])
+def upload_api_view(request):
+    try:
+        serializer = UploadImageSerializer(data=request.data)
+        is_valid = serializer.is_valid()
+        if is_valid:
+            image_upload_object = serializer.save()
+            image = cv2.imread(f'{MEDIA_ROOT}/'
+                               f'{image_upload_object.image_input}')
+            del image_upload_object
+            hash_pool = pd.read_pickle(PICKLED_CARDS_PATH)
+            hash_pool = flatten_hash_array(hash_pool)
+            card_models = find_cards(image, hash_pool)
+            del hash_pool
+            del serializer
+            del image
+            card_serializers = OutPutSerializer(card_models, many=True)
+            return Response({"message": "Success.", "data": card_serializers.data})
+    except Exception as e:
+        logging.exception(e)
+        exit(1)
+    return Response({"message": "Bad input type.", "data": "failed"}, status=400)
+
+
+@login_required()
+@api_view(['POST'])
+def upload_selected_images_to_ebay_view(request):
+    try:
+        listing_details = []
+        for image_id in request.data:
+            image_id = image_id['id']
+            image_upload_instance = get_object_or_404(ImageUpload, pk=image_id)
+            user_refresh_token = WebUser.get_user(request.user).refresh_token
+
+            listing_helper = CardListingObject(image_upload_instance, request.user)
+            print(listing_helper.user)
+            print(listing_helper.card_set)
+            ebay_image_url = listing_helper.upload_image()
+            print(ebay_image_url)
+            #ebay_image_url = upload_image(listing_helper.api, image_upload_instance,
+            #                              user_refresh_token)
+
+            listing_details.append(
+                image_upload_instance.update_url_details(ebay_image_url))
+        #serializers = UploadImageSerializer(data=request.data, many=True)
+        for listing in listing_details:
+            print(listing)
+        return Response('hooray for nothing', status=301)
+    except Exception as e:
+        logging.exception(str(e))
+        return Response({"message": "status 500: internal server error"}, status=500)

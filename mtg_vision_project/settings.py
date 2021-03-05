@@ -18,6 +18,7 @@ import environ
 env = environ.Env(
     DEBUG=bool,
     ALLOWED_HOSTS=[str],
+    MEDIA_URL=str,
     MEDIA_ROOT=str,
     CSRF_COOKIE_SECURE=bool,
     SESSION_COOKIE_SECURE=bool,
@@ -69,7 +70,11 @@ ROOT_URLCONF = 'mtg_vision_project.urls'
 LOGIN_REDIRECT_URL = '/home/'
 LOGOUT_REDIRECT_URL = '/home/'
 
+# TODO: fix your goddamned media/static files root and shit
+# /var/www/mtg-vision/uploads/whatever_url.jpg is where it is looking
+# /static/images/wahtever_url.jpg is where it actually is
 MEDIA_ROOT = env('MEDIA_ROOT')
+MEDIA_URL = env('MEDIA_URL')
 
 TEMPLATES = [
     {

@@ -1,5 +1,5 @@
+from urllib.parse import quote
 import cv2
-import numpy as np
 
 from mtg_vision_project.settings import STATICFILES_DIRS
 
@@ -30,9 +30,11 @@ def draw_text_and_save_card_image(card_name, card_image, n):
     """ NO IMAGE SHOULD BE APPENDED ON CARD FOR EBAY LISTING
     cv2.putText(card_image, card_label, (0, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, (143, 0, 255), 2)
+    HOWEVER, IF YOU WOULD LIKE TO ADD THIS FEATURE, THE WORK IS
+    ALREADY DONE FOR YOU. YOUR WELCOME.
     """
-    image_path = f'{card_name}_{n}.jpg'
-    full_path = f'{STATICFILES_DIRS[0]}/{image_path}'
-    # rgb_img = cv2.cvtColor(card_image, cv2.COLOR_BGR2RGB)
+
+    image_path = quote(f'{card_name}_{n}.jpg')
+    full_path = f'{STATICFILES_DIRS[0]}/media/{image_path}'
     cv2.imwrite(full_path, card_image)
     return image_path
