@@ -1,14 +1,18 @@
 import logging
 import pathlib
 import urllib.parse
+from decimal import Decimal
 
+from django.contrib.auth.models import User
+from django.utils import timezone
 from requests import HTTPError
 from django.db import models
 
 from ebaysdk.trading import Connection as Trading
 from django.core.files.storage import FileSystemStorage
 
-
+from image_matcher.models.profile import WebUser
+from image_matcher.utils import fetch_card_price
 from mtg_vision_project.settings import BASE_DIR, STATIC_URL, STATICFILES_DIRS, MEDIA_ROOT
 
 
@@ -77,10 +81,48 @@ def _get_path_from_image_input(image_upload_instance):
 
 
 class CardListingDetails(models.Model):
+    user = models.ForeignKey(User, on_delete=models.PROTECT, default=4)
+
     scryfall_id = models.CharField(max_length=80)
     name = models.CharField(max_length=80)
     set = models.CharField(max_length=80)
     ebay_image_url = models.URLField(null=True, blank=True)
+
+    price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+
+    is_listed = models.BooleanField(default=False, blank=True)
+    listed_datetime = models.DateTimeField(default=None, null=True, blank=True)
+    listing_title = models.CharField(max_length=80,
+                                     null=True, blank=True)
+    listed_price = models.DecimalField(max_digits=6, decimal_places=2, null=True,
+                                       blank=True)
+    price_pull_failed = models.BooleanField(default=False, blank=True)
+
+    def update_price(self):
+        try:
+            self.price = fetch_card_price(self.scryfall_id)
+        except HTTPError as e:
+            logging.exception(str(e))
+            raise
+        if self.price is None:
+            self.price_pull_failed = True
+        self.save()
+
+    @property
+    def adjusted_price(self):
+        _user = WebUser.get_user(self.user)
+        self.update_price()
+        if self.price_pull_failed:
+            return
+        percentage_off = _user.sell_settings_profile.percentage_off_average
+        shipping_cost = _user.sell_settings_profile.shipping_cost
+        adjusted_price = ((Decimal(1.00) - Decimal(percentage_off)) * self.price) - \
+            Decimal(shipping_cost)
+        return two_digits(adjusted_price)
+
+    @property
+    def default_title(self):
+        return f'Magic the Gathering - {self.set.upper()} {self.name.upper()}'
 
     def __str__(self):
         return f'name: {self.name}, set: {self.set}, url: {self.ebay_image_url}'
@@ -112,3 +154,7 @@ class ImageUpload(models.Model):
         except Exception:
             pass  # if file doesn't exist that's ok
         super().delete(*args, **kwargs)
+
+
+def two_digits(number):
+    return Decimal(number).quantize(Decimal('0.01'))

@@ -1,13 +1,10 @@
+import logging
 import environ
-
 from ebaysdk.trading import Connection as Trading
+from requests import HTTPError
 
 from image_matcher.models import AppCredential
 from image_matcher.models.profile import WebUser
-from mtg_vision_project.ebay_oauth_python_client.oauthclient.oauth2api import \
-    (
-        get_access_token, RefreshAccessTokenCredentials,
-    )
 from mtg_vision_project.settings import STATICFILES_DIRS
 
 env = environ.Env(DOMAIN=str)
@@ -15,11 +12,10 @@ environ.Env.read_env()
 
 
 class CardListingObject:
-    def __init__(self, image_instance, user):
-        self._image_instance = image_instance
-        self._listing_details = image_instance.listing_details
+    def __init__(self, listing_details, user):
+        self._listing_details = listing_details
         self._user = user
-        self._ebay_image_url = None
+        self._domain = env('DOMAIN')
 
         self._api = self.activate_api()
 
@@ -30,14 +26,6 @@ class CardListingObject:
     @user.setter
     def user(self, value):
         self._user = value
-
-    @property
-    def ebay_image_url(self):
-        return self._ebay_image_url
-
-    @ebay_image_url.setter
-    def ebay_image_url(self, value):
-        self._ebay_image_url = value
 
     @property
     def card_id(self):
@@ -59,87 +47,77 @@ class CardListingObject:
     def api(self):
         return self._api
 
+    @property
+    def domain(self):
+        return self._domain
+
     def activate_api(self):
         """Required for ebay -> app id, dev id, cert id, and token in ebay.yaml:
         For more detailed information on these items, please visit 'ebaysdk' on github.
         Note: Appears to be error code 931 for invalid auth token.
         """
 
-        app_id = env('APP_ID')
-        cert_id = env('CERT_ID')
-        dev_id = env('DEV_ID')
-        redirect_uri = env('REDIRECT_URI')
-        api_endpoint = env('API_ENDPOINT')
         web_user = WebUser.get_user(self.user)
-        print(f'app_id: {app_id}')
-        print(f'cert_id: {cert_id}')
-        print(f'dev_id: {dev_id}')
-        print(f'web_user: {web_user}')
-        print(f'redirect_uri: {redirect_uri}')
-        print(f'api_endpoint: {api_endpoint}')
-
-        credentials = RefreshAccessTokenCredentials(app_id, cert_id, dev_id,
-                                                    env('REDIRECT_URI'),
-                                                    env('API_ENDPOINT'),
-                                                    web_user.refresh_token)
-
-        print(web_user.refresh_token)
-        token, credential = AppCredential.objects.get_app_credential().get_access_token(
-            web_user.refresh_token)
-        #get_access_token(web_user.refresh_token)
-        print('test')
-        print(token.access_token)
-        print('test')
+        token, credential = AppCredential.objects.get_app_credential(
+            domain=self.domain).get_access_token(web_user.refresh_token)
         web_user.access_token = token.access_token
         web_user.save()
-        return Trading(compatability=719, appid=credentials.client_id,
-                       certid=credentials.client_secret, devid=credentials.dev_id,
-                       token=token.access_token, config=None, domain='api.sandbox.ebay.com')
+        return Trading(compatability=719, appid=credential.app_id,
+                       certid=credential.cert_id, devid=credential.dev_id,
+                       token=token.access_token, config=None, domain=self.domain)
 
-    def upload_image(self):
+    def upload_image(self, image_path):
         """Uploads to ebay server for use in listing."""
 
-        files = {'file': ('EbayImage', open(self._get_path_from_image_input(), 'rb'))}
+        files = {'file': ('EbayImage', open(self._get_abs_path(image_path), 'rb'))}
         picture_data = {
             "WarningLevel": "Low",
-            "PictureName": self.title,
-        }
-        print(files, picture_data)
+            "PictureName": self.title}
         response = self._api.execute('UploadSiteHostedPictures', picture_data,
                                      files=files)
-        print(response)
-        self._ebay_image_url = response.reply.get('SiteHostedPictureDetails').get(
-            'FullURL')
-        return self._ebay_image_url
+        ebay_image_url = response.reply.get('SiteHostedPictureDetails').get('FullURL')
+        return ebay_image_url
 
-    def _get_path_from_image_input(self):
-        return STATICFILES_DIRS[0] + '/media/' + self._image_instance.image_input.name
+    @staticmethod
+    def _get_abs_path(image_path):
+        return STATICFILES_DIRS[0] + '/media/' + image_path
 
-        # TODO: Test the API above******
-    """@property
-    def item_payload(self):
+    def create_listing(self, listing_title, listed_price, ebay_image_url):
+        """Requires image to be uploaded."""
+
+        item_payload = self.item_payload(listing_title, listed_price, ebay_image_url)
+        try:
+            response = self.api.execute('AddItem', item_payload)
+            response.raise_for_status()
+        except HTTPError as e:
+            print(logging.exception(str(e)))
+            raise
+
+    def item_payload(self, listing_title, listed_price, ebay_image_url):
+        ebay_settings = self.user.ebay_settings_profile
+        print(ebay_image_url)
         return {
             "Item": {
-                "Title": self.title,
+                "Title": listing_title,
                 "Description": f"Each auction is for 1 copy of shown card.  The card you will receive is displayed in"
                                f" the image.",
                 "PrimaryCategory": {
                     "CategoryID": "183454"
                 },
-                "StartPrice": f"{self.price}",
+                "StartPrice": f"{listed_price}",
                 "CategoryMappingAllowed": "true",
-                "Country": f"{COUNTRY}",
+                "Country": f"{ebay_settings.country_code}",
                 "ConditionID": "3000",
                 "Currency": "USD",
                 "DispatchTimeMax": "3",
                 "ListingDuration": "Days_7",
                 "ListingType": "Chinese",
                 "PaymentMethods": "PayPal",
-                "PayPalEmailAddress": f"{PAYPAL_EMAIL}",
+                "PayPalEmailAddress": f"{ebay_settings.paypal_email}",
                 "PictureDetails": {
-                    "PictureURL": self._image_url
+                    "PictureURL": ebay_image_url
                 },
-                "PostalCode": f"{POSTAL_CODE}",
+                "PostalCode": f"{ebay_settings.postal_code}",
                 "Quantity": "1",
                 "ReturnPolicy": {
                     "ReturnsAcceptedOption": "ReturnsAccepted",
@@ -155,15 +133,16 @@ class CardListingObject:
                         "ShippingServiceCost": "2.50"
                     }
                 },
-                "Site": f"{COUNTRY}"
+                "Site": f"{ebay_settings.country_code}",
+                "Location": f"{ebay_settings.country_code}"
             }
         }
-
+    """
     @property
     def api(self):
-        return self._api"""
+        return self._api
 
-    """@property
+    @property
     def price(self):
         print(self._price)
         if self._price and self._percent_off and self._shipping:

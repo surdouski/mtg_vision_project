@@ -52,13 +52,9 @@ class AppCredential(models.Model):
         -------
         (OAuthToken, AppCredential)
         """
-        try:
-            response = requests.post(self.api_endpoint,
-                                     data=self._generate_refresh_request_body(refresh_token),
-                                     headers=self._generate_request_headers())
-            print(response.json())
-        except Exception as e:
-            logging.exception(str(e))
+        response = requests.post(self.api_endpoint,
+                                 data=self._generate_refresh_request_body(refresh_token),
+                                 headers=self._generate_request_headers())
         return OAuthToken(response), self
 
     @staticmethod

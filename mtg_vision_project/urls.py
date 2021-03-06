@@ -39,7 +39,10 @@ urlpatterns = [
     path('drag_n_drop/confirm_selected',
          views.upload_selected_images_to_ebay_view, name='confirm_selected'),
 
-    path('new_listing/', new_listing, name='new_listing'),
+    path('listing_redirect/', views.create_listing_redirect_view,
+         name='listing-redirect'),
+
+    path('new_listing/<pk>', views.create_listing_view, name='listing-detail'),
 
     path('ebay_settings/', views.ebay_settings_view, name='ebay_settings'),
     path('sell_settings/', views.sell_settings_view, name='sell_settings'),

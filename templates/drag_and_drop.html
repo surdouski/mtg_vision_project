@@ -129,9 +129,10 @@ function submitSelections() {
         },
         mode: 'same-origin',
         body: JSON.stringify(data)
-    })
+        })
         .then(response => {
             console.log(response.json());
+            window.location.href = "{% url 'listing-redirect' %}";
         })
         .catch(error => {
             console.error(error);

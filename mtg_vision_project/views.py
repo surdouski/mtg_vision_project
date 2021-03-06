@@ -11,8 +11,9 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from requests import HTTPError
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.generics import get_object_or_404
+from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 
 from image_matcher.detect_image import find_cards
@@ -25,7 +26,7 @@ from .forms import SignUpForm
 from .ebay_oauth_python_client.oauthclient.oauth2api import \
     oauth2api, get_instance_oauth2api
 from .ebay_oauth_python_client.oauthclient.model.model import environment
-from .serializers import UploadImageSerializer, OutPutSerializer
+from .serializers import UploadImageSerializer, OutPutSerializer, ListingSerializer
 from image_matcher.hash_matcher import flatten_hash_array
 from .settings import MEDIA_ROOT, PICKLED_CARDS_PATH, STATIC_URL, STATIC_ROOT, MEDIA_URL
 
@@ -195,22 +196,58 @@ def upload_selected_images_to_ebay_view(request):
         for image_id in request.data:
             image_id = image_id['id']
             image_upload_instance = get_object_or_404(ImageUpload, pk=image_id)
-            user_refresh_token = WebUser.get_user(request.user).refresh_token
-
-            listing_helper = CardListingObject(image_upload_instance, request.user)
-            print(listing_helper.user)
-            print(listing_helper.card_set)
-            ebay_image_url = listing_helper.upload_image()
-            print(ebay_image_url)
-            #ebay_image_url = upload_image(listing_helper.api, image_upload_instance,
-            #                              user_refresh_token)
-
+            listing_helper = CardListingObject(image_upload_instance.listing_details,
+                                               request.user)
+            ebay_image_url = listing_helper.upload_image(
+                image_upload_instance.image_input.name)
             listing_details.append(
                 image_upload_instance.update_url_details(ebay_image_url))
-        #serializers = UploadImageSerializer(data=request.data, many=True)
         for listing in listing_details:
-            print(listing)
-        return Response('hooray for nothing', status=301)
+            listing.update_price()
+        return Response('hooray for nothing', status=200)
     except Exception as e:
         logging.exception(str(e))
         return Response({"message": "status 500: internal server error"}, status=500)
+
+
+@login_required()
+@api_view(['GET'])
+def create_listing_redirect_view(request):
+    current_user_listings = CardListingDetails.objects.filter(user=request.user,
+                                                              is_listed=False,
+                                                              ebay_image_url__isnull=False,
+                                                              price_pull_failed=False,
+                                                              price__isnull=False)
+    if current_user_listings.exists():
+        pk = current_user_listings.order_by('listed_datetime').last().pk
+        return HttpResponseRedirect(reverse('listing-detail', args=(int(pk),)))
+    messages.add_message(request, messages.INFO, 'No more listings, please upload '
+                                                 'another photo to continue listing.')
+    return HttpResponseRedirect(reverse('drag_n_drop'))
+
+
+@login_required()
+@api_view(['GET', 'POST'])
+@renderer_classes([TemplateHTMLRenderer])
+def create_listing_view(request, pk):
+    if request.method == 'GET':
+        listing_detail = get_object_or_404(CardListingDetails, pk=pk)
+        serializer = ListingSerializer(listing_detail, initial={'test'})
+        return Response(
+            {'serializer': serializer, 'pk': pk, 'detail': listing_detail},
+            template_name='listing_form.html')
+    if request.method == 'POST':
+        print('in request.method POST')
+        listing_detail = get_object_or_404(CardListingDetails, pk=pk)
+        print('after listing_detail')
+        serializer = ListingSerializer(listing_detail, data=request.data)
+        print('aFTer serializer')
+        if serializer.is_valid():
+            print('is_valid: true')
+            serializer.save(user=request.user)
+            return HttpResponseRedirect(reverse('listing-redirect'))
+        print(serializer)
+        print(serializer.errors)
+        return HttpResponseRedirect(reverse('drag_n_drop'))
+
+
