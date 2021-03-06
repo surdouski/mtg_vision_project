@@ -20,7 +20,7 @@ from image_matcher.detect_image import find_cards
 from image_matcher.ebay_listing import CardListingObject
 from image_matcher.forms import get_ebay_settings_form, get_sell_settings_form
 from image_matcher.models import ImageUpload
-from image_matcher.models.image_upload import upload_image, CardListingDetails
+from image_matcher.models.image_upload import CardListingDetails
 from image_matcher.models.profile import WebUser
 from .forms import SignUpForm
 from .ebay_oauth_python_client.oauthclient.oauth2api import \
@@ -238,17 +238,11 @@ def create_listing_view(request, pk):
             {'serializer': serializer, 'pk': pk, 'detail': listing_detail},
             template_name='listing_form.html')
     if request.method == 'POST':
-        print('in request.method POST')
         listing_detail = get_object_or_404(CardListingDetails, pk=pk)
-        print('after listing_detail')
         serializer = ListingSerializer(listing_detail, data=request.data)
-        print('aFTer serializer')
         if serializer.is_valid():
-            print('is_valid: true')
             serializer.save(user=request.user)
             return HttpResponseRedirect(reverse('listing-redirect'))
-        print(serializer)
-        print(serializer.errors)
         return HttpResponseRedirect(reverse('drag_n_drop'))
 
 

@@ -9,51 +9,58 @@
 
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
         {% block css %}
         {% endblock css %}
+    <style>
+        #header-id a {
+            text-decoration: none;
+        }
+
+    </style>
     </head>
     <body>
- <nav class="navbar navbar-inverse">
+ <header class="navbar navbar-inverse" id="header-id">
   <div class="container-fluid">
     <div class="navbar-header">
-      <a class="navbar-brand" href="#">MTG-Vision</a>
+      <a class="navbar-brand" href="/">MTG-Vision</a>
     </div>
     <ul class="nav navbar-nav">
-        <li class="active"><a href="{% url 'info' %}">Info</a></li>
         {% if user.is_authenticated %}
-            <li><a href="{% url 'drag_n_drop' %}">Test Image Cropping</a></li>
-        {% comment %}
-        {% if request.user|has_ebay_tokens %}
-            <li><a href="{% url 'new_listing' %}">Begin Listing</a></li>
+            {% if not request.user|has_ebay_tokens %}
+                <li><a href="{% url 'ebay_sign_in' %}">Link Account to eBay</a></li>
+            {% else %}
+                <li><a href="{% url 'drag_n_drop' %}">Begin Listing</a></li>
+            {% endif %}
         {% endif %}
-        {% endcomment %}
-        {% if not request.user|has_ebay_tokens %}
-            <li><a href="{% url 'ebay_sign_in' %}">Link Account to eBay</a></li>
-        {% endif %}
-    {% endif %}
     </ul>
     <ul class="nav navbar-nav navbar-right">
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                {{ user.username }}
-            </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                <ul>
-                    <li><a class="dropdown-item" href="{% url 'sell_settings' %}">Sell Settings</a></li>
-                    <li><a class="dropdown-item" href="{% url 'ebay_settings' %}">eBay Settings</a></li>
-                </ul>
-            </div>
-        </li>
-      {% if not user.is_authenticated %}
-          <li><a href="{% url 'signup' %}"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
-          <li><a href="{% url 'login' %}"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
-      {% else %}
-          <li><a href="{% url 'logout' %}"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
-      {% endif %}
+        {% if user.is_authenticated %}
+            {% if request.user|has_ebay_tokens %}
+                <li><a href="{% url 'sell_settings' %}">Seller Settings</a></li>
+                <li><a href="{% url 'ebay_settings' %}">eBay Settings</a></li>
+            {% endif %}
+            <li class="nav-item dropdown">
+                <a class="nav-item nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true"
+                   aria-expanded="true">{{ user.username }}</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+                    </div>
+                </a>
+            </li>
+
+        {% else %}
+            <li><a href="{% url 'signup' %}"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
+            <li><a href="{% url 'login' %}"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+        {% endif %}
+          {% comment %}
+          <a class="nav-item nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            <li><a href="{% url 'logout' %}"><span class="glyphicon glyphicon-dropdown"></span> {{ user.username }}</a></li>
+
+          </a>
+          {% endcomment %}
     </ul>
   </div>
-</nav>
+</header>
     {% block content %}
     {% endblock content %}
     <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
