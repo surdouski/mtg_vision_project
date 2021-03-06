@@ -11,7 +11,8 @@ conf/
 supervisord.conf
 
 image_matcher/migrations/*
-static/*
+static/images
+static/media
 
 
 mtg_vision_project/ebay_oauth_python_client/CONTRIBUTING.adoc
