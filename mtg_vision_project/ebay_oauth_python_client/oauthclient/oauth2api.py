@@ -72,11 +72,11 @@ class oauth2api(object):
         """
       
         logging.info("Trying to get a new application access token ... ")        
-        credential = credentialutil.get_credentials(env_type)       
+        credential = AppCredential.objects.get_app_credential()
         headers = util._generate_request_headers(credential)
         body = util._generate_application_request_body(credential, ' '.join(scopes))
         
-        resp = requests.post(env_type.api_endpoint, data=body, headers=headers)
+        resp = requests.post(credential.api_endpoint, data=body, headers=headers)
         print(body)
         content = json.loads(resp.content)
         token = oAuth_token()     
@@ -95,14 +95,14 @@ class oauth2api(object):
 
     def exchange_code_for_access_token(self, env_type, code):       
         logging.info("Trying to get a new user access token ... ")  
-        credential = credentialutil.get_credentials(env_type)   
+        credential = AppCredential.objects.get_app_credential()
     
         headers = util._generate_request_headers(credential)
         body = util._generate_oauth_request_body(credential, code)
         print(f'headers: {headers}')
         print(f'body: {body}')
 
-        resp = requests.post(env_type.api_endpoint, data=body, headers=headers)
+        resp = requests.post(credential.api_endpoint, data=body, headers=headers)
             
         content = json.loads(resp.content)
         token = oAuth_token()     
@@ -126,11 +126,11 @@ class oauth2api(object):
         
         logging.info("Trying to get a new user access token ... ")
 
-        credential = credentialutil.get_credentials(env_type)
+        credential = AppCredential.objects.get_app_credential()
     
         headers = util._generate_request_headers(credential)
         body = util._generate_refresh_request_body(' '.join(scopes), refresh_token)
-        resp = requests.post(env_type.api_endpoint, data=body, headers=headers)
+        resp = requests.post(credential.api_endpoint, data=body, headers=headers)
         content = json.loads(resp.content)
         token = oAuth_token()        
         token.token_response = content    
