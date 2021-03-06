@@ -5,7 +5,7 @@ from requests import HTTPError
 
 from image_matcher.models import AppCredential
 from image_matcher.models.profile import WebUser
-from mtg_vision_project.settings import STATICFILES_DIRS
+from mtg_vision_project.settings import MEDIA_ROOT
 
 env = environ.Env(DOMAIN=str)
 environ.Env.read_env()
@@ -80,7 +80,7 @@ class CardListingObject:
 
     @staticmethod
     def _get_abs_path(image_path):
-        return STATICFILES_DIRS[0] + '/media/' + image_path
+        return f'{MEDIA_ROOT}/{image_path}'
 
     def create_listing(self, listing_title, listed_price, ebay_image_url):
         """Requires image to be uploaded."""

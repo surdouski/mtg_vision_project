@@ -9,6 +9,7 @@ media
 static/all_sets_small.csv
 conf/
 supervisord.conf
+eBay_Oauth_log.txt
 
 image_matcher/migrations/*
 static/images

@@ -1,10 +1,6 @@
-from urllib.parse import quote
 import cv2
 
-from mtg_vision_project.settings import (
-    STATICFILES_DIRS, MEDIA_ROOT, STATIC_ROOT,
-    STATIC_URL,
-)
+from mtg_vision_project.settings import MEDIA_ROOT
 
 
 def draw_text_and_contours_image(card_name, contour, input_image, rectangle_points,
@@ -37,9 +33,8 @@ def draw_text_and_save_card_image(card_name, card_image, n):
     ALREADY DONE FOR YOU. YOUR WELCOME.
     """
 
-    #image_path = quote(f'{card_name}_{n}.jpg')
     image_path = f'{card_name}_{n}.jpg'
-    full_path = f'{STATICFILES_DIRS[0]}/media/{image_path}'
+    full_path = f'{MEDIA_ROOT}/{image_path}'
     print(full_path)
     cv2.imwrite(full_path, card_image)
     return image_path

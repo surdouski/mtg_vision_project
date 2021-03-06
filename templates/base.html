@@ -23,7 +23,6 @@
         <li class="active"><a href="{% url 'info' %}">Info</a></li>
         {% if user.is_authenticated %}
             <li><a href="{% url 'drag_n_drop' %}">Test Image Cropping</a></li>
-        {% endif %}
         {% comment %}
         {% if request.user|has_ebay_tokens %}
             <li><a href="{% url 'new_listing' %}">Begin Listing</a></li>
@@ -32,6 +31,7 @@
         {% if not request.user|has_ebay_tokens %}
             <li><a href="{% url 'ebay_sign_in' %}">Link Account to eBay</a></li>
         {% endif %}
+    {% endif %}
     </ul>
     <ul class="nav navbar-nav navbar-right">
         <li class="nav-item dropdown">

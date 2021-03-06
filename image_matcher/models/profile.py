@@ -49,9 +49,9 @@ class UserTokensProfile(models.Model):
 class EbaySettingsProfile(models.Model):
     user = models.OneToOneField(get_user_model(), related_name='ebay_settings_profile',
                                 on_delete=models.PROTECT)
-    paypal_email = models.EmailField(blank=True)
-    country_code = models.CharField(max_length=10, default='US')
-    postal_code = models.CharField(max_length=12, blank=True)
+    paypal_email = models.EmailField(blank=True, null=True)
+    country_code = models.CharField(max_length=10, default='US', null=True, blank=True)
+    postal_code = models.CharField(max_length=12, null=True, blank=True)
 
 
 class SellSettingsProfile(models.Model):

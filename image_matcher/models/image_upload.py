@@ -13,7 +13,7 @@ from django.core.files.storage import FileSystemStorage
 
 from image_matcher.models.profile import WebUser
 from image_matcher.utils import fetch_card_price
-from mtg_vision_project.settings import BASE_DIR, STATIC_URL, STATICFILES_DIRS, MEDIA_ROOT
+from mtg_vision_project.settings import BASE_DIR, MEDIA_ROOT
 
 
 def get_activated_api(user_refresh_token):
@@ -76,12 +76,12 @@ def _get_ebay_image_file(path_to_image):
 
 
 def _get_path_from_image_input(image_upload_instance):
-    return STATICFILES_DIRS[0] + '/media/' + \
-           image_upload_instance.image_input.name
+    return f"{MEDIA_ROOT}/{image_upload_instance.image_input.name}"
 
 
 class CardListingDetails(models.Model):
-    user = models.ForeignKey(User, on_delete=models.PROTECT, default=4)
+    user = models.ForeignKey(User, on_delete=models.PROTECT, default=None, blank=True,
+                             null=True)
 
     scryfall_id = models.CharField(max_length=80)
     name = models.CharField(max_length=80)

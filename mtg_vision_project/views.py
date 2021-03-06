@@ -28,7 +28,7 @@ from .ebay_oauth_python_client.oauthclient.oauth2api import \
 from .ebay_oauth_python_client.oauthclient.model.model import environment
 from .serializers import UploadImageSerializer, OutPutSerializer, ListingSerializer
 from image_matcher.hash_matcher import flatten_hash_array
-from .settings import MEDIA_ROOT, PICKLED_CARDS_PATH, STATIC_URL, STATIC_ROOT, MEDIA_URL
+from .settings import MEDIA_ROOT, PICKLED_CARDS_PATH
 
 
 def index(request):
@@ -171,8 +171,7 @@ def upload_api_view(request):
         is_valid = serializer.is_valid()
         if is_valid:
             image_upload_object = serializer.save()
-            image = cv2.imread(f'{MEDIA_ROOT}/'
-                               f'{image_upload_object.image_input}')
+            image = cv2.imread(f'{MEDIA_ROOT}/{image_upload_object.image_input}')
             del image_upload_object
             hash_pool = pd.read_pickle(PICKLED_CARDS_PATH)
             hash_pool = flatten_hash_array(hash_pool)
@@ -203,6 +202,8 @@ def upload_selected_images_to_ebay_view(request):
             listing_details.append(
                 image_upload_instance.update_url_details(ebay_image_url))
         for listing in listing_details:
+            listing.user = request.user
+            listing.save()
             listing.update_price()
         return Response('hooray for nothing', status=200)
     except Exception as e:
