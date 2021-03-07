@@ -85,33 +85,48 @@ class CardListingObject:
     def create_listing(self, listing_title, listed_price, ebay_image_url):
         """Requires image to be uploaded."""
 
-        item_payload = self.item_payload(listing_title, listed_price, ebay_image_url)
+        seller_settings_profile = self.user.sell_settings_profile
+        listing_type = "FixedPriceItem" if seller_settings_profile.fixed_price_item \
+            else "chinese"
+        item_payload = self.item_payload(listing_title, listed_price, ebay_image_url,
+                                         seller_settings_profile.best_offer_enabled,
+                                         seller_settings_profile.shipping_cost,
+                                         listing_type)
         try:
-            response = self.api.execute('AddItem', item_payload)
+            if seller_settings_profile.fixed_price_item:
+                api_command = 'AddFixedPriceItem'
+            else:
+                api_command = 'AddItem'
+            response = self.api.execute(api_command, item_payload)
             response.raise_for_status()
         except HTTPError as e:
             print(logging.exception(str(e)))
             raise
 
-    def item_payload(self, listing_title, listed_price, ebay_image_url):
+    def item_payload(self, listing_title, listed_price, ebay_image_url,
+                     best_offer_enabled, shipping_cost, listing_type):
         ebay_settings = self.user.ebay_settings_profile
         print(ebay_image_url)
         return {
             "Item": {
                 "Title": listing_title,
                 "Description": f"Each auction is for 1 copy of shown card.  The card you will receive is displayed in"
-                               f" the image.",
+                               f" the image.      "
+                               f"\nThis listing was created by mtg-vision.com.",
                 "PrimaryCategory": {
                     "CategoryID": "183454"
                 },
                 "StartPrice": f"{listed_price}",
+                "BestOfferDetails": {
+                    "BestOfferEnabled": "true" if best_offer_enabled else "false",
+                },
                 "CategoryMappingAllowed": "true",
                 "Country": f"{ebay_settings.country_code}",
                 "ConditionID": "3000",
                 "Currency": "USD",
                 "DispatchTimeMax": "3",
                 "ListingDuration": "Days_7",
-                "ListingType": "Chinese",
+                "ListingType": f"{listing_type}",
                 "PaymentMethods": "PayPal",
                 "PayPalEmailAddress": f"{ebay_settings.paypal_email}",
                 "PictureDetails": {
@@ -122,7 +137,7 @@ class CardListingObject:
                 "ReturnPolicy": {
                     "ReturnsAcceptedOption": "ReturnsAccepted",
                     "RefundOption": "MoneyBack",
-                    "ReturnsWithinOption": "Days_30",
+                    "ReturnsWithinOption": "Days_14",
                     "ShippingCostPaidByOption": "Buyer"
                 },
                 "ShippingDetails": {
@@ -130,7 +145,7 @@ class CardListingObject:
                     "ShippingServiceOptions": {
                         "ShippingServicePriority": "1",
                         "ShippingService": "USPSMedia",
-                        "ShippingServiceCost": "2.50"
+                        "ShippingServiceCost": f"{shipping_cost}"
                     }
                 },
                 "Site": f"{ebay_settings.country_code}",

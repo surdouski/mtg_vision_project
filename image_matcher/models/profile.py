@@ -61,6 +61,8 @@ class SellSettingsProfile(models.Model):
                                         default=decimal.Decimal(2.50))
     percentage_off_average = models.DecimalField(max_digits=4, decimal_places=4,
                                                  default=decimal.Decimal(0.10))
+    fixed_price_item = models.BooleanField(default=True, blank=True)
+    best_offer_enabled = models.BooleanField(default=True, blank=True)
 
 
 @receiver(post_save, sender=get_user_model())
