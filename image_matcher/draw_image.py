@@ -33,11 +33,11 @@ def draw_text_and_save_card_image(card_name, card_image, n):
     ALREADY DONE FOR YOU. YOUR WELCOME.
     """
 
-    advertising_watermark = 'listed with mtg-vision.com'
+    advertising_watermark = 'Listed with mtg-vision.com'
     height = card_image.shape[0] - 40
-    width = int(card_image.shape[1] / 2)
+    width = int(card_image.shape[1] / 2) - 100
     cv2.putText(card_image, advertising_watermark, (width, height),
-                cv2.FONT_HERSHEY_SIMPLEX, 1.3, (255, 255, 255), 2)
+                cv2.FONT_HERSHEY_COMPLEX, 1.3, (255, 255, 255), 2)
     image_path = f'{card_name}_{n}.jpg'
     full_path = f'{MEDIA_ROOT}/{image_path}'
     cv2.imwrite(full_path, card_image)
