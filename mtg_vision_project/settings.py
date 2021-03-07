@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 import os
-#import os.path
 import environ
 
 
@@ -30,10 +29,6 @@ env = environ.Env(
 environ.Env.read_env()
 
 BASE_DIR = environ.Path(__file__) - 2
-
-"""class Dev(Configuration):
-    DOTENV = os.path.join(BASE_DIR, '.env')
-    SECRET_KEY = DOTENV.environ('SECRET_KEY')"""
 
 SECRET_KEY = env.bytes('SECRET_KEY')
 
@@ -70,9 +65,6 @@ ROOT_URLCONF = 'mtg_vision_project.urls'
 LOGIN_REDIRECT_URL = '/home/'
 LOGOUT_REDIRECT_URL = '/home/'
 
-# TODO: fix your goddamned media/static files root and shit
-# /var/www/mtg-vision/uploads/whatever_url.jpg is where it is looking
-# /static/images/wahtever_url.jpg is where it actually is
 MEDIA_ROOT = env('MEDIA_ROOT')
 MEDIA_URL = env('MEDIA_URL')
 
@@ -96,8 +88,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mtg_vision_project.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -106,8 +96,6 @@ DATABASES = {
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -124,8 +112,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/3.1/topics/i18n/
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
@@ -134,14 +120,11 @@ USE_TZ = True
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
-# COOKIES
 CSRF_COOKIE_SECURE = env('CSRF_COOKIE_SECURE')
 SESSION_COOKIE_SECURE = env('SESSION_COOKIE_SECURE')
 CONN_MAX_AGE = env('CONN_MAX_AGE')
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.1/howto/static-files/
 STATIC_ROOT = env('STATIC_ROOT')
 STATIC_URL = env('STATIC_URL')
 STATICFILES_DIRS = (

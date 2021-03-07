@@ -1,37 +1,15 @@
 import logging
-import pathlib
-import urllib.parse
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.utils import timezone
 from requests import HTTPError
 from django.db import models
 
-from ebaysdk.trading import Connection as Trading
 from django.core.files.storage import FileSystemStorage
 
 from image_matcher.models.profile import WebUser
 from image_matcher.utils import fetch_card_price
-from mtg_vision_project.settings import BASE_DIR, MEDIA_ROOT
-
-
-def get_activated_api(user_refresh_token):
-    from mtg_vision_project.ebay_oauth_python_client.oauthclient.oauth2api import \
-        get_access_token
-    file_path = BASE_DIR / pathlib.Path('ebay.yaml')
-    try:
-        """
-        api = Trading(config_file=file_path, domain='api.sandbox.ebay.com',
-                      token=user_access_token)
-        return api
-        """
-        user_access_token = get_access_token(user_refresh_token)
-        api = Trading(config_file=file_path, domain='api.sandbox.ebay.com',
-                      token=user_access_token)
-        return api
-    except HTTPError as e:
-        logging.exception(str(e))
+from mtg_vision_project.settings import MEDIA_ROOT
 
 
 def upload_image(api, image_upload_instance, user_refresh_token):
@@ -42,18 +20,8 @@ def upload_image(api, image_upload_instance, user_refresh_token):
         files = _get_ebay_image_file(path_to_image)
         picture_data = _get_picture_metadata(image_upload_instance)
         try:
-
-            """
-            print('why dont i have good error handling?')
-            print(files)
-            print(picture_data)
-            print(api)
-            print(path_to_image)
-            """
-
             response = api.execute('UploadSiteHostedPictures', picture_data, files=files)
         except Exception as e:
-            print('because im lazy')
             logging.exception(str(e))
             raise
         image_url = response.reply.get('SiteHostedPictureDetails').get('FullURL')

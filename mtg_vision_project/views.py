@@ -19,13 +19,10 @@ from rest_framework.response import Response
 from image_matcher.detect_image import find_cards
 from image_matcher.ebay_listing import CardListingObject
 from image_matcher.forms import get_ebay_settings_form, get_sell_settings_form
-from image_matcher.models import ImageUpload
+from image_matcher.models import ImageUpload, AppCredential
 from image_matcher.models.image_upload import CardListingDetails
 from image_matcher.models.profile import WebUser
 from .forms import SignUpForm
-from .ebay_oauth_python_client.oauthclient.oauth2api import \
-    oauth2api, get_instance_oauth2api
-from .ebay_oauth_python_client.oauthclient.model.model import environment
 from .serializers import UploadImageSerializer, OutPutSerializer, ListingSerializer
 from image_matcher.hash_matcher import flatten_hash_array
 from .settings import MEDIA_ROOT, PICKLED_CARDS_PATH
@@ -67,17 +64,10 @@ def signup(request):
         return render(request, template, context)
 
 
-app_scopes = ["https://api.ebay.com/oauth/api_scope",
-                  "https://api.ebay.com/oauth/api_scope/sell.inventory",
-                  "https://api.ebay.com/oauth/api_scope/sell.marketing",
-                  "https://api.ebay.com/oauth/api_scope/sell.account",
-                  "https://api.ebay.com/oauth/api_scope/sell.fulfillment"]
-
-
 @login_required()
 def ebay_sign_in(request):
     try:
-        sign_in_url = oauth2api.generate_user_authorization_url(app_scopes)
+        sign_in_url = AppCredential.api.get_user_authorization_url()
         return HttpResponseRedirect(sign_in_url)
     except HTTPError:
         messages.add_message(request, messages.ERROR, 'Unable to get authorization '
@@ -88,18 +78,13 @@ def ebay_sign_in(request):
 @login_required()
 def ebay_auth_code(request):
     if 'code' not in request.GET:
-        return HttpResponseRedirect(reverse('ebay_sign_in '))
-
-    code = request.GET.get('code')
-    app_config_path = os.path.join(os.path.split(__file__)[0], 'config',
-                                   'ebay-config-sample.yaml')
-    oauth2api_inst = get_instance_oauth2api(app_config_path)
+        return HttpResponseRedirect(reverse('ebay_sign_in'))
     try:
-        user_token = oauth2api_inst.exchange_code_for_access_token(environment.SANDBOX,
-                                                                   code)
+        code = request.GET.get('code')
+        oauth_tokens = AppCredential.api.get_oauth_tokens(code)
         user = WebUser.get_user(request.user)
-        user.access_token = user_token.access_token
-        user.refresh_token = user_token.refresh_token
+        user.access_token = oauth_tokens.access_token
+        user.refresh_token = oauth_tokens.refresh_token
         user.save()
     except HTTPError:
         messages.add_message(request, messages.ERROR, 'Unable to create ebay link.')

@@ -5,7 +5,6 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
 
-
 def get_ebay_settings_form(user, post=None):
     if post:
         return EbaySettingsProfileForm(

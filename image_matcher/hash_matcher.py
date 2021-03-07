@@ -1,6 +1,5 @@
 import imagehash as ih
 import numpy as np
-import pandas as pd
 from PIL import Image
 
 
