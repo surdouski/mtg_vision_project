@@ -29,7 +29,7 @@ figure {
                 <img src="{{ detail.ebay_image_url }}">
             </figure>
         </div>
-
+        <div hidden id="spinner" class="custom_spinner"></div>
         <div class="container" id="form-container">
             <form action="{% url 'listing-detail' pk=pk %}" method="POST">
                 {% csrf_token %}
@@ -41,9 +41,9 @@ figure {
                     <label>Listing Price</label>
                     <input name="listed_price" class="form-control" type="text" value="{{ detail.adjusted_price }}">
                 </div>
-                    <button class="btn btn-secondary align-self-end" type="button" onclick="destroy_listing()">Cancel (and go to next card)</button>
+                    <button class="btn btn-secondary align-self-end" type="button" onclick="destroy_listing()">Cancel</button>
 
-                    <input class="btn btn-primary align-self-end" type="submit" value="Create Listing">
+                    <input class="btn btn-primary align-self-end" type="submit" value="Submit Listing to eBay" onclick="start_spinner()">
             </form>
         </div>
 {% endblock %}
@@ -51,6 +51,11 @@ figure {
 
 {% block javascript %}
 <script>
+function start_spinner() {
+    const spinner = document.getElementById("spinner");
+    spinner.removeAttribute("hidden");
+}
+
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {

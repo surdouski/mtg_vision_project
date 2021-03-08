@@ -12,12 +12,15 @@ def find_cards(image, hash_pool):
     card_models = []
     for n, contour in enumerate(contours):
         rectangle_points = _get_rectangle_points_from_contour(contour)
-        card_image = _four_point_transform(image,
-                                           rectangle_points)
+        card_image = _four_point_transform(image, rectangle_points)
         card, diff = find_minimum_hash_difference(card_image, hash_pool)
         if _possible_match(card['name'], diff):
-            card_image_path = draw_text_and_save_card_image(card['name'], card_image, n)
+            label_card_image = _four_point_transform(image, rectangle_points,
+                                                     for_display=True)
+            card_image_path = draw_text_and_save_card_image(card['name'],
+                                                            label_card_image, n)
             del card_image
+            del label_card_image
             details = CardListingDetails.objects.create(
                 scryfall_id=card['id'], name=card['name'], set=card['set'])
             card_models.append(ImageUpload.objects.create(image_input=card_image_path,
@@ -43,7 +46,7 @@ def _get_rectangle_points_from_contour(contour):
     return np.float32([p[0] for p in contour])
 
 
-def _four_point_transform(image, pts):
+def _four_point_transform(image, pts, for_display=False):
     """Transform a quadrilateral section of an image into a rectangular area.
 
     Parameters
@@ -58,13 +61,15 @@ def _four_point_transform(image, pts):
         Transformed rectangular image
     """
 
-    spacing_around_card = 20
-    double = 2
-    double_spacing_around_card = double * spacing_around_card
-
     rect = _order_points(pts)
-    max_height, max_width = _get_edges(double_spacing_around_card, rect)
 
+    spacing_around_card = 0
+    double_spacing_around_card = 0
+    if for_display:
+        spacing_around_card = 100
+        double_spacing_around_card = 2 * spacing_around_card
+
+    max_height, max_width = _get_edges(double_spacing_around_card, rect)
     transformed_image = _warp_image(image, max_height, max_width, rect,
                                     spacing_around_card)
     if _image_is_horizontal(max_width, max_height):

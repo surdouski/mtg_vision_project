@@ -12,9 +12,39 @@
         {% block css %}
         {% endblock css %}
     <style>
-        #header-id a {
-            text-decoration: none;
+    #header-id a {
+        text-decoration: none;
+    }
+    .custom_spinner:not([hidden]) {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .custom_spinner::after {
+        content: "";
+        width: 80px;
+        height: 80px;
+        border: 2px solid #f3f3f3;
+        border-top: 3px solid #f25a41;
+        border-radius: 100%;
+        will-change: transform;
+        animation: spin 1s infinite linear;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
         }
+        to {
+            transform: rotate(360deg);
+        }
+    }
 
     </style>
     </head>
@@ -29,7 +59,7 @@
             {% if not request.user|has_ebay_tokens %}
                 <li><a href="{% url 'ebay_sign_in' %}">Link Account to eBay</a></li>
             {% else %}
-                <li><a href="{% url 'drag_n_drop' %}">Begin Listing</a></li>
+                <li><a href="{% url 'drag_n_drop' %}">Image Upload</a></li>
             {% endif %}
         {% endif %}
     </ul>

@@ -60,12 +60,13 @@ img {
 {% endblock %}
 
 {% block content %}
+    <div hidden id="spinner" class="custom_spinner"></div>
     <div id="edit_photo" class="edit-photo-modal">
         <form id="drag_files" class="drag-drop" method="post" action="{% url 'upload_image' %}" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             <input type="file" name="image_input" id="files" multiple />
             <div class="drag-files-label">
-                Drag or select an image to begin listing!
+                Drag or select an image to identify your magic cards.
             </div>
         </form>
     </div>
@@ -80,14 +81,15 @@ img {
                     <h4 class="modal-title">Select correctly labeled cards.</h4>
                 </div>
                 <div class="modal-body">
+                    <div hidden id="modal-spinner" class="custom_spinner"></div>
                     <form action="/" method="post">
                         <select multiple="multiple" class="image-picker show-labels" id="modal-card-select">
                         </select>
-                        <input type="button" name="submit_form" id="submit_form_id" value="Submit" onclick="submitSelections()" >
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal" style="align-self: flex-start">Close</button>
+                            <input type="button" class="btn btn-primary" name="submit_form" id="submit_form_id" value="Next Step" onclick="submitSelections()" >
+                        </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -119,6 +121,9 @@ function getCookie(name) {
 
 
 function submitSelections() {
+    const modal_spinner = document.getElementById("modal-spinner");
+    modal_spinner.removeAttribute("hidden");
+
     const selected_ids = $('select').data('picker').selected_values();
     let data = [];
     selected_ids.forEach( function(value) {
@@ -136,6 +141,7 @@ function submitSelections() {
         })
         .then(response => {
             console.log(response.json());
+            modal_spinner.setAttribute("hidden", "");
             window.location.href = "{% url 'listing-redirect' %}";
         })
         .catch(error => {
@@ -191,6 +197,7 @@ function replace_file_uploader_with_button() {
 
 (function (document, window, index) {
          const csrftoken = getCookie('csrftoken');
+         const spinner = document.getElementById("spinner");
 
          isAdvancedUpload = function () {
             var div = document.createElement('div');
@@ -254,6 +261,7 @@ function replace_file_uploader_with_button() {
                      return false;
 
                  form.classList.add('uploading');
+                 spinner.removeAttribute("hidden");
 
                  if (isAdvancedUpload)
                  {
@@ -271,8 +279,9 @@ function replace_file_uploader_with_button() {
                      ajax.open(form.getAttribute('method'), form.getAttribute('action'), true);
 
                      ajax.onload = function () {
-                         console.log('ajax onload');
                          form.classList.remove('uploading');
+                         spinner.setAttribute("hidden", "");
+
                          if (ajax.status >= 200 && ajax.status < 400) {
                             console.log(ajax.response);
 
